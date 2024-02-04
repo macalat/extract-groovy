@@ -133,7 +133,7 @@ function organizeJsonFiles(tempJsonDir, extractDir) {
     });
 
     // Remove the temporary directory
-    fs.rmdirSync(tempJsonDir, { recursive: true });
+    fs.rmSync(tempJsonDir, { recursive: true });
 }
 
 // Extract transaction or trigger name from filename
