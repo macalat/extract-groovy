@@ -1,0 +1,14 @@
+{
+  "name": "extract-groovy",
+  "version": "1.0.0",
+  "description": "App to extract and organize groovy files from a zip of XtendM3 JSON files.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "author": "Mark Jayson Mandap",
+  "license": "MIT",
+  "dependencies": {
+    "adm-zip": "^0.5.2"
+  }
+}
