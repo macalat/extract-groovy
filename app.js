@@ -3,7 +3,7 @@ const path = require('path');
 const AdmZip = require('adm-zip');
 
 // Extract and organize JSON files from the zip
-function extractAndOrganizeZip(zipFilePath, extractDir) {
+function extractAndOrganizeZip(zipFilePath, extractDir, renameFiles = false) {
     // Extract the base name of the zip file
     const zipFileName = path.basename(zipFilePath, '.zip');
     // Initialize AdmZip with the provided zip file path
@@ -36,7 +36,7 @@ function extractAndOrganizeZip(zipFilePath, extractDir) {
     });
 
     // Organize JSON files from the temporary directory
-    organizeJsonFiles(tempJsonDir, extractDir, zipFileName);
+    organizeJsonFiles(tempJsonDir, extractDir, renameFiles);
 
     // Remove empty directories
     removeEmptyDirectories(extractDir);
@@ -86,7 +86,7 @@ function combineDirectories(sourceDir, destDir) {
 }
 
 // Organize JSON files into appropriate folders
-function organizeJsonFiles(tempJsonDir, extractDir) {
+function organizeJsonFiles(tempJsonDir, extractDir, renameFiles) {
     // Create directories for different file types
     const directories = ['BATCH', 'TRANSACTION', 'TRIGGER', 'UTILITY'];
     directories.forEach(directory => {
@@ -123,7 +123,8 @@ function organizeJsonFiles(tempJsonDir, extractDir) {
                     if (!fs.existsSync(destDirectory)) {
                         fs.mkdirSync(destDirectory, { recursive: true });
                     }
-                    const destPath = path.join(destDirectory, `${filename.replace('.json', '.groovy')}`);
+                    const groovyFileName = renameFiles ? getFileNameWithoutPrefix(filename) : filename.replace('.json', '.groovy');
+                    const destPath = path.join(destDirectory, `${groovyFileName}`);
                     fs.writeFileSync(destPath, code);
                 }
             }
@@ -152,6 +153,15 @@ function getTransactionOrTriggerName(filename) {
     return '';
 }
 
+// Extract the file name without prefix after the last occurrence of '-'
+function getFileNameWithoutPrefix(filename) {
+    const lastHyphenIndex = filename.lastIndexOf('-');
+    if (lastHyphenIndex !== -1) {
+        return filename.substring(lastHyphenIndex + 1).replace('.json', '.groovy');
+    }
+    return filename.replace('.json', '.groovy');
+}
+
 // Recursively process a directory and its subdirectories
 function processDirectory(dirPath, tempJsonDir) {
     const files = fs.readdirSync(dirPath);
@@ -177,7 +187,7 @@ function processDirectory(dirPath, tempJsonDir) {
 }
 
 // Main function
-function main(inputPath) {
+function main(inputPath, renameFiles = false) {
     const stats = fs.statSync(inputPath);
     if (stats.isDirectory()) {
         // Process all zip files in the directory
@@ -192,7 +202,7 @@ function main(inputPath) {
                     fs.mkdirSync(extractDir);
                 }
                 // Extract and organize the zip contents
-                extractAndOrganizeZip(filePath, extractDir);
+                extractAndOrganizeZip(filePath, extractDir, renameFiles);
             }
         });
     } else if (stats.isFile()) {
@@ -203,19 +213,20 @@ function main(inputPath) {
                 fs.mkdirSync(extractDir);
             }
             // Extract and organize the zip contents
-            extractAndOrganizeZip(inputPath, extractDir);
+            extractAndOrganizeZip(inputPath, extractDir, renameFiles);
         }
     } else {
         console.error('Invalid input. Please provide a valid zip file or directory path.');
     }
 }
 
-// Usage: node app.js <path_to_zip_file_or_directory>
+// Usage: node app.js <path_to_zip_file_or_directory> [rename_files]
 const inputPath = process.argv[2];
+const renameFiles = process.argv[3] === 'true'; // Convert the third argument to a boolean value
 if (!inputPath) {
     console.error('Please provide the path to the zip file or directory.');
     process.exit(1);
 }
 
-// Call the main function with the provided input path
-main(inputPath);
+// Call the main function with the provided input path and optional parameter
+main(inputPath, renameFiles);
